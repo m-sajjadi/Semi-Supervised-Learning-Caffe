@@ -1,0 +1,303 @@
+name: "LeNet"
+layer {
+  name: "mnist"
+  type: "Data"
+  top: "data_labeled"
+  top: "label"
+  include {
+    phase: TRAIN
+  }
+  transform_param {
+    scale: 0.00390625
+    crop_size: 24
+  }
+  data_param {
+    source: "examples/mnist/mnist_train_100_lmdb"
+    batch_size: 64
+    backend: LMDB
+  }
+}
+layer {
+  name: "mnist_unlabeled"
+  type: "DataUnlabeled"	 
+  top: "data_unlabeled"  
+  include {
+    phase: TRAIN
+  }
+  transform_param {
+    scale: 0.00390625
+    crop_size: 24
+  }
+  data_param {
+    source: "examples/mnist/mnist_train_lmdb"
+    batch_size: 64
+    backend: LMDB
+  }
+  nt: 4
+}
+
+layer {
+  name: "concat"
+  bottom: "data_labeled"
+  bottom: "data_unlabeled"
+  top: "data"
+  type: "Concat"
+  concat_param {
+    axis: 0
+  }
+  include {
+    phase: TRAIN
+  }  
+}
+
+layer {
+  name: "mnist"
+  type: "Data"
+  top: "data"
+  top: "label"
+  include {
+    phase: TEST
+  }
+  transform_param {
+    scale: 0.00390625
+    crop_size: 24
+  }
+  data_param {
+    source: "examples/mnist/mnist_test_lmdb"
+    batch_size: 100
+    backend: LMDB
+  }
+}
+
+layer {
+  name: "conv1"
+  type: "Convolution"
+  bottom: "data"
+  top: "conv1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 20
+    kernel_size: 5
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "pool1"
+  type: "Pooling"
+  bottom: "conv1"
+  top: "pool1"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
+layer {
+  name: "conv2"
+  type: "Convolution"
+  bottom: "pool1"
+  top: "conv2"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  convolution_param {
+    num_output: 50
+    kernel_size: 5
+    stride: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "pool2"
+  type: "Pooling"
+  bottom: "conv2"
+  top: "pool2"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
+layer {
+  name: "ip1"
+  type: "InnerProduct"
+  bottom: "pool2"
+  top: "ip1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 500
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "relu1"
+  type: "ReLU"
+  bottom: "ip1"
+  top: "ip1"
+}
+
+layer {
+  name: "drop1"
+  type: "Dropout"
+  bottom: "ip1"
+  top: "ip1"
+  dropout_param {
+    dropout_ratio: 0.5
+  }
+}
+
+layer {
+  name: "ip2"
+  type: "InnerProduct"
+  bottom: "ip1"
+  top: "ip2"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 10
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layer {
+  name: "slicer"
+  type: "Slice"
+  bottom: "ip2"  
+  top: "ip2_labeled"
+  top: "ip2_unlabeled"
+  slice_param {
+    axis: 0
+    slice_point: 64
+  }
+  include {
+    phase: TRAIN
+  }
+  
+}
+
+layer {
+  name: "accuracy"
+  type: "Accuracy"
+  bottom: "ip2_labeled"
+  bottom: "label"
+  top: "accuracy"
+  include {
+    phase: TRAIN
+  }
+}
+
+layer {
+  name: "loss"
+  type: "SoftmaxWithLoss"
+  bottom: "ip2_labeled"
+  bottom: "label"
+  top: "loss"
+  
+  include {
+    phase: TRAIN
+  }
+  
+}
+
+layer {
+  name: "accuracy"
+  type: "Accuracy"
+  bottom: "ip2"
+  bottom: "label"
+  top: "accuracy"
+  include {
+    phase: TEST
+  }
+}
+
+layer {
+  name: "loss"
+  type: "SoftmaxWithLoss"
+  bottom: "ip2"
+  bottom: "label"
+  top: "loss"
+  
+  include {
+    phase: TEST
+  }
+  
+}
+
+layer {
+  name: "softmax_unlabeled"
+  type: "Softmax"
+  bottom: "ip2_unlabeled"    
+  top: "softmax_unlabeled"  
+  
+  include {
+    phase: TRAIN
+  }  
+}
+
+layer {
+  name: "loss_mx"
+  type: "LossMX"
+  bottom: "softmax_unlabeled"
+  top: "loss_mx"  
+  lambda: 0.005  
+  # lambda: 0
+  
+  include {
+    phase: TRAIN
+  }
+  
+}
+
+layer {
+  name: "loss_ts"
+  type: "LossTS"
+  bottom: "softmax_unlabeled"  
+  top: "loss_ts"  
+  lambda: 0.02
+  # lambda: 0
+  
+  nt: 4
+  
+  include {
+    phase: TRAIN
+  }
+  
+}
