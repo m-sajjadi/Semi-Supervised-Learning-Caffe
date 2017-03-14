@@ -37,6 +37,8 @@ Please review the following model to see how these layers can be used in practic
 $CAFFE_ROOT/examples/mnist/lenet_train_test_ssl.prototxt
 ```
 
+Please note that these are only the GPU implementation of the loss functions. We did not implement the CPU versions.
+
 You need to run the following commands to train semi-supervised MNIST:
 
 ```
