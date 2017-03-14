@@ -51,6 +51,8 @@ $CAFFE_ROOT/examples/mnist/train_lenet_ssl.sh
 $CAFFE_ROOT/examples/mnist/lenet_train_test_ssl.prototxt
 ```
 
+In this example, we randomly crop each repetition of an unlabeled sample. Then, we try to minimize their difference in predictions using transformation/stability loss function. We also apply the mutual-exclusivity loss function to all the unlabeled data. This increases the accuracy from ~85% to more than 92%.
+
 If you you already have the Caffe installed, you can add the following files to your existing Caffe:
 
 ```
