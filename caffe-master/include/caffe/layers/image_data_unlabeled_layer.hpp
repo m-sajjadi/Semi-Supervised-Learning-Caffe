@@ -30,10 +30,8 @@ class ImageDataUnlabeledLayer : public BasePrefetchingDataLayer<Dtype> {
 
   virtual inline const char* type() const { return "ImageDataUnlabeled"; }
   virtual inline int ExactNumBottomBlobs() const { return 0; }
-  // virtual inline int ExactNumTopBlobs() const { return 2; }
+  virtual inline int ExactNumTopBlobs() const { return 1; }
   
-  virtual inline int MinTopBlobs() const { return 1; }
-  virtual inline int MaxTopBlobs() const { return 2; }  
 
  protected:
   shared_ptr<Caffe::RNG> prefetch_rng_;
